@@ -38,32 +38,37 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7);
-        final String userEmail;
-
         try {
-            userEmail = jwtUtil.extractUsername(jwt);
+            final String jwt = authHeader.substring(7);
+            final String userEmail = jwtUtil.extractUsername(jwt);
+
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                userRepository.findByEmail(userEmail).ifPresent(user -> {
+
+                    UserDetails userDetails = User.builder()
+                            .username(user.getEmail())
+                            .password(user.getPassword())
+                            .roles(user.getRole().name())
+                            .build();
+
+                    try {
+                        if (jwtUtil.isTokenValid(jwt, userDetails)) {
+                            UsernamePasswordAuthenticationToken authToken =
+                                    new UsernamePasswordAuthenticationToken(
+                                            userDetails, null, userDetails.getAuthorities());
+
+                            authToken.setDetails(
+                                    new WebAuthenticationDetailsSource().buildDetails(request));
+
+                            SecurityContextHolder.getContext().setAuthentication(authToken);
+                        }
+                    } catch (Exception e) {
+                    }
+                });
+            }
+
         } catch (Exception e) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            userRepository.findByEmail(userEmail).ifPresent(user -> {
-                UserDetails userDetails = User.builder()
-                        .username(user.getEmail())
-                        .password(user.getPassword())
-                        .roles(user.getRole().name())
-                        .build();
-
-                if (jwtUtil.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            });
         }
 
         filterChain.doFilter(request, response);

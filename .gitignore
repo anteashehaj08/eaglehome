@@ -1,15 +1,15 @@
-# Node (Angular)
+# Node
 node_modules/
+
+# Angular
+.angular/
 dist/
 
-# Java (Spring Boot)
+# Spring Boot
 target/
-build/
 
-# Logs
+# Logs & env
 *.log
-
-# Env files
 .env
 
 # IDE

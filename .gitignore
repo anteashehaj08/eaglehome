@@ -1,0 +1,17 @@
+# Node (Angular)
+node_modules/
+dist/
+
+# Java (Spring Boot)
+target/
+build/
+
+# Logs
+*.log
+
+# Env files
+.env
+
+# IDE
+.idea/
+.vscode/

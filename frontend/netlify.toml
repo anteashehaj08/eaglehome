@@ -1,0 +1,8 @@
+[build]
+command = "ng build"
+publish = "dist/ecommerce-frontend/browser"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

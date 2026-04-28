@@ -1,14 +1,10 @@
 package com.ecommerce.controller;
 
 import com.ecommerce.dto.CartDto;
-import com.ecommerce.entity.User;
-import com.ecommerce.repository.UserRepository;
 import com.ecommerce.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,44 +13,34 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
 
     private final CartService cartService;
-    private final UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<CartDto.CartResponse> getCart(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(cartService.getCart(getUserId(userDetails)));
+    public ResponseEntity<CartDto.CartResponse> getCart() {
+        return ResponseEntity.ok(cartService.getCart());
     }
 
     @PostMapping("/items")
     public ResponseEntity<CartDto.CartResponse> addItem(
-            @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CartDto.AddItemRequest request) {
-        return ResponseEntity.ok(cartService.addItem(getUserId(userDetails), request));
+        return ResponseEntity.ok(cartService.addItem(request));
     }
 
     @PutMapping("/items/{itemId}")
     public ResponseEntity<CartDto.CartResponse> updateItem(
-            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId,
             @Valid @RequestBody CartDto.UpdateItemRequest request) {
-        return ResponseEntity.ok(cartService.updateItem(getUserId(userDetails), itemId, request));
+        return ResponseEntity.ok(cartService.updateItem(itemId, request));
     }
 
     @DeleteMapping("/items/{itemId}")
     public ResponseEntity<CartDto.CartResponse> removeItem(
-            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId) {
-        return ResponseEntity.ok(cartService.removeItem(getUserId(userDetails), itemId));
+        return ResponseEntity.ok(cartService.removeItem(itemId));
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> clearCart(@AuthenticationPrincipal UserDetails userDetails) {
-        cartService.clearCart(getUserId(userDetails));
+    public ResponseEntity<Void> clearCart() {
+        cartService.clearCart();
         return ResponseEntity.noContent().build();
-    }
-
-    private Long getUserId(UserDetails userDetails) {
-        return userRepository.findByEmail(userDetails.getUsername())
-                .map(User::getId)
-                .orElseThrow();
     }
 }

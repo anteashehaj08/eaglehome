@@ -44,7 +44,10 @@ public class AuthService {
         userRepository.save(user);
 
         // Create empty cart for new user
-        Cart cart = Cart.builder().user(user).build();
+        Cart cart = Cart.builder()
+                .user(user)
+                .build();
+
         cartRepository.save(cart);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -55,9 +58,17 @@ public class AuthService {
     }
 
     public AuthDto.AuthResponse login(AuthDto.LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (Exception e) {
+            throw new BadRequestException("Invalid email or password");
+        }
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadRequestException("User not found"));
@@ -65,7 +76,12 @@ public class AuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtUtil.generateToken(userDetails);
 
-        return new AuthDto.AuthResponse(token, user.getEmail(),
-                user.getFirstName(), user.getLastName(), user.getRole().name());
+        return new AuthDto.AuthResponse(
+                token,
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getRole().name()
+        );
     }
 }

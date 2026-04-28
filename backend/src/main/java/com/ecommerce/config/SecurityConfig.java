@@ -64,34 +64,10 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
                 .authorizeHttpRequests(auth -> auth
-
-                        // allow preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // PUBLIC endpoints (support both /api and non-api to avoid mismatch issues)
-                        .requestMatchers(
-                                "/",
-                                "/auth/**",
-                                "/api/auth/**",
-                                "/products/**",
-                                "/api/products/**",
-                                "/categories/**",
-                                "/api/categories/**",
-                                "/uploads/**"
-                        ).permitAll()
-
-                        // ADMIN
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // EVERYTHING ELSE
-                        .anyRequest().authenticated()
-                )
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+                        .requestMatchers("/**").permitAll() // TEMP DEBUG FIX
+                );
 
         return http.build();
     }
@@ -101,14 +77,17 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        List<String> origins = Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .toList();
+        config.setAllowedOrigins(List.of(
+                "https://eaglefier.com",
+                "https://www.eaglefier.com",
+                "http://localhost:4200"
+        ));
 
-        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+
+        config.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

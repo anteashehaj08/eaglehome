@@ -79,8 +79,8 @@ public class SecurityConfig {
                         // EVERYTHING ELSE requires JWT
                         .anyRequest().authenticated()
                 )
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authenticationProvider());
+                //.addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

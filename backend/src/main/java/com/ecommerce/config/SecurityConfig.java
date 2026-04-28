@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -26,6 +27,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -37,7 +39,6 @@ public class SecurityConfig {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
-    // safe fallback prevents Railway crash if env var is missing
     @Value("${app.cors.allowed-origins:http://localhost:4200}")
     private String allowedOrigins;
 
@@ -67,16 +68,23 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ ALLOW preflight requests
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // PUBLIC endpoints
-                        .requestMatchers("/", "/api/auth/**").permitAll()
-                        .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/categories/**").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
+                        // allow preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ADMIN only
+                        // PUBLIC endpoints (support both /api and non-api to avoid mismatch issues)
+                        .requestMatchers(
+                                "/",
+                                "/auth/**",
+                                "/api/auth/**",
+                                "/products/**",
+                                "/api/products/**",
+                                "/categories/**",
+                                "/api/categories/**",
+                                "/uploads/**"
+                        ).permitAll()
+
+                        // ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         // EVERYTHING ELSE
@@ -90,9 +98,12 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration config = new CorsConfiguration();
 
-        List<String> origins = List.of(allowedOrigins.split(","));
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .toList();
 
         config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

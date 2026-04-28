@@ -14,7 +14,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-// No @Component — instantiated manually in SecurityConfig to break the cycle
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -30,6 +29,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+
+        String path = request.getRequestURI();
+
+        // ✅ Skip public endpoints completely
+        if (path.startsWith("/api/auth")
+                || path.startsWith("/auth")
+                || path.startsWith("/api/products")
+                || path.startsWith("/products")
+                || path.startsWith("/api/categories")
+                || path.startsWith("/categories")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         final String authHeader = request.getHeader("Authorization");
 
@@ -54,21 +67,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                     try {
                         if (jwtUtil.isTokenValid(jwt, userDetails)) {
+
                             UsernamePasswordAuthenticationToken authToken =
                                     new UsernamePasswordAuthenticationToken(
-                                            userDetails, null, userDetails.getAuthorities());
+                                            userDetails,
+                                            null,
+                                            userDetails.getAuthorities()
+                                    );
 
                             authToken.setDetails(
-                                    new WebAuthenticationDetailsSource().buildDetails(request));
+                                    new WebAuthenticationDetailsSource().buildDetails(request)
+                            );
 
                             SecurityContextHolder.getContext().setAuthentication(authToken);
                         }
                     } catch (Exception e) {
+                        System.out.println("JWT validation error: " + e.getMessage());
                     }
                 });
             }
 
         } catch (Exception e) {
+            System.out.println("JWT filter error: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

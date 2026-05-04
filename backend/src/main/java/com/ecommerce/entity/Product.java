@@ -46,7 +46,7 @@ public class Product {
     // e.g. "W:120cm H:80cm D:60cm"
     private String dimensions;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;
 
